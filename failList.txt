@@ -1,0 +1,35 @@
+downloaded ABMD failed
+index 1 is out of bounds for axis 0 with size 1
+
+downloaded BRK.B failed
+'sector'
+
+downloaded BF.B failed
+'sector'
+
+downloaded CEG failed
+unsupported operand type(s) for *: 'NoneType' and 'float'
+
+downloaded ELV failed
+unsupported operand type(s) for *: 'NoneType' and 'float'
+
+downloaded GEN failed
+'sector'
+
+downloaded META failed
+unsupported operand type(s) for *: 'NoneType' and 'float'
+
+downloaded PARA failed
+unsupported operand type(s) for *: 'NoneType' and 'float'
+
+downloaded SBUX failed
+unsupported operand type(s) for *: 'NoneType' and 'float'
+
+downloaded V failed
+unsupported operand type(s) for *: 'NoneType' and 'float'
+
+downloaded WBD failed
+unsupported operand type(s) for *: 'NoneType' and 'float'
+
+downloaded WTW failed
+unsupported operand type(s) for *: 'NoneType' and 'float'
