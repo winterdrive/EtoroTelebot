@@ -19,21 +19,20 @@ from dotenv import load_dotenv
 from redis import Redis as rs
 import time
 
-
 # 不加這行，整個系統都讀不到環境變數
 load_dotenv()
-
 
 tw = pytz.timezone('Asia/Taipei')
 now = datetime.now(tw)
 
 sched = BackgroundScheduler(timezone="Asia/Taipei", daemon=True)
 # # 正式用如下
-if os.getenv('ENVIRONMENT')=='master':
+if os.getenv('ENVIRONMENT') == 'master':
     sched.add_job(jobService.job_in_master, 'cron', day_of_week='mon-fri', hour='21,4', minute=31)
-elif os.getenv('ENVIRONMENT')=='slave':
+elif os.getenv('ENVIRONMENT') == 'slave':
     sched.add_job(jobService.job_in_slave, 'cron', day_of_week='mon-fri', hour='21,4', minute=31)
-sched.add_job(Redis.initialize_state_of_num_and_ticker_pairs_in_redis, 'cron', day_of_week='mon-fri', hour='19,23', minute=59, id='my_job_re')
+sched.add_job(Redis.initialize_state_of_num_and_ticker_pairs_in_redis, 'cron', day_of_week='mon-fri', hour='19,23',
+              minute=59, id='my_job_re')
 
 # 測試用如下
 # sched.add_job(jobService.job_in_master, 'cron', day_of_week='mon-fri',hour='16,21,22,4', minute=35, id='my_job_test')
@@ -46,8 +45,8 @@ app = Flask(__name__)
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-#Heroku會找不到log存的位置，可能沒權限或沒給空間建
-if os.getenv('DEPLOY_SITE')!='heroku':
+# Heroku會找不到log存的位置，可能沒權限或沒給空間建
+if os.getenv('DEPLOY_SITE') != 'heroku':
     dictConfig = {
         "version": 1,
         "formatters": {
@@ -87,7 +86,8 @@ if os.getenv('DEPLOY_SITE')!='heroku':
     logger = logging.getLogger("file")
     logger.info('info message')
 else:
-    dictConfig={}
+    dictConfig = {}
+
 
 # # 註冊一個函數，如果沒有未處理的異常拋出，在每次請求之後執行
 # @app.after_request
@@ -106,18 +106,23 @@ def hello_world():
     return render_template('panel.html', system_datetime=datetime.now(), taipei_datetime=datetime.now(tw))
 
 
-@app.route('/tool',methods=['GET'])
+@app.route('/heatmap')
+def heatmap():
+    return render_template('stock-heatmap.html')
+
+
+@app.route('/tool', methods=['GET'])
 def sent_manually():
     environment = request.values.get('env')
     print(environment)
-    if environment=='master':
+    if environment == 'master':
         jobService.job_in_master()
-    elif environment=='slave':
+    elif environment == 'slave':
         jobService.job_in_slave()
     return "images sent"
 
 
-@app.route('/tool-test',methods=['GET'])
+@app.route('/tool-test', methods=['GET'])
 def sent_manually_test():
     jobService.job_in_test()
     return "images sent"
@@ -144,7 +149,7 @@ def initialize_state_of_num_and_ticker_pairs_in_redis():
 
 @app.route('/redis-test')
 def redis_connection_test():
-    conn=Redis.get_redis_connection()
+    conn = Redis.get_redis_connection()
     return f'ping is {conn.ping()}'
 
 
@@ -163,7 +168,7 @@ def redis_set_test():
 @app.route('/lua-test')
 def redis_lua_test():
     redis = redisService.Redis.get_redis_connection()
-    script="""
+    script = """
     local key = KEYS[1]
     local seconds = ARGV[1]
     local value = ARGV[2]
@@ -171,45 +176,45 @@ def redis_lua_test():
     return redis.call('GET',key)    
     """
     cmd = redis.register_script(script)
-    result = cmd(keys=['key'],args=[100,'value'])
+    result = cmd(keys=['key'], args=[100, 'value'])
     return f'done and return {result}'
 
 
 @app.route('/status-non-lua-test1')
 def redis_status_non_lua_test1():
-    time_start = time.time() #開始計時
+    time_start = time.time()  # 開始計時
     for i in range(100):
         num_ticker = redisService.Redis.get_member_in_initial_state(redisService.ETORO_DICT_KEY_NAME)
         for ticker in num_ticker:
             redisService.Redis.change_state_of_num_and_ticker_pairs_in_redis_when_finish(ticker)
-    time_end = time.time()    #結束計時
-    time_c= time_end - time_start   #執行所花時間
-    return f'done in {time_c}' #~300s
+    time_end = time.time()  # 結束計時
+    time_c = time_end - time_start  # 執行所花時間
+    return f'done in {time_c}'  # ~300s
 
 
 @app.route('/status-non-lua-test2')
 def redis_status_non_lua_test2():
-    time_start = time.time() #開始計時
+    time_start = time.time()  # 開始計時
     conn = redisService.Redis.get_redis_connection()
     for i in range(100):
         myList = conn.zrangebyscore(redisService.ETORO_DICT_KEY_NAME, '100', '120', start=0, num=100)
         for member in myList:
             conn.zadd(redisService.ETORO_DICT_KEY_NAME, {member: 999})
-    time_end = time.time()    #結束計時
-    time_c= time_end - time_start   #執行所花時間
-    return f'done in {time_c}' #46s~91s
+    time_end = time.time()  # 結束計時
+    time_c = time_end - time_start  # 執行所花時間
+    return f'done in {time_c}'  # 46s~91s
 
 
 @app.route('/status-lua-test')
 def redis_status_lua_test():
-    time_start = time.time() #開始計時
-    my_count=0
+    time_start = time.time()  # 開始計時
+    my_count = 0
     for i in range(100):
-        result=redisService.Redis.change_state_of_num_and_ticker_pairs_in_redis_when_finish_in_lua()
-        my_count+=len(result)
-    time_end = time.time()    #結束計時
-    time_c= time_end - time_start   #執行所花時間
-    return f'done {my_count} in {time_c}' #1s~5s 快又穩，又保證原子性
+        result = redisService.Redis.change_state_of_num_and_ticker_pairs_in_redis_when_finish_in_lua()
+        my_count += len(result)
+    time_end = time.time()  # 結束計時
+    time_c = time_end - time_start  # 執行所花時間
+    return f'done {my_count} in {time_c}'  # 1s~5s 快又穩，又保證原子性
 
 
 if __name__ == '__main__':
@@ -227,9 +232,9 @@ if __name__ == '__main__':
     # app.run(debug=True, port=os.getenv("PORT", default=5000))
 
 # linux執行，
-    # 3 process，背景執行，自動重載
-    # gunicorn3 --workers=3 app:app --daemon --reload
-    # pkill gunicorn
-    # 砍掉當前所有進程
+# 3 process，背景執行，自動重載
+# gunicorn3 --workers=3 app:app --daemon --reload
+# pkill gunicorn
+# 砍掉當前所有進程
 # vscode執行
-    #python -m flask run
+# python -m flask run

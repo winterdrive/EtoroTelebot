@@ -28,7 +28,7 @@ def job_in_master():
         print("Done and Plotting the following list")
         print(mySet)
         remaining = len(redisService.Redis.get_member_in_initial_state(redisService.ETORO_DICT_KEY_NAME))
-    # 送圖也一個一個request送，送完可以再修成異部請求
+    # 送圖也一個一個request送，送完可以再修成異步請求
     for i in mySendList:
         try:
             sendPhotoByTelegram.main(i)
