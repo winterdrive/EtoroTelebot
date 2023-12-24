@@ -1,0 +1,6 @@
+__pycache__
+.idea
+venv
+.env
+etoro_price/
+flask.log
